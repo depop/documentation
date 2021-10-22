@@ -6,9 +6,9 @@ further_reading:
     - link: /getting_started/synthetics/private_location
       tag: 'Documentation'
       text: 'Getting Started with Private Locations'
-    - link: 'synthetics/browser_tests'
+    - link: 'synthetics/private_locations/dimensioning'
       tag: 'Documentation'
-      text: 'Configure a Browser Test'
+      text: 'Dimensioning your Private Locations'
     - link: 'synthetics/api_tests'
       tag: 'Documentation'
       text: 'Configure an API Test'
@@ -20,7 +20,7 @@ The access to this feature is restricted - if you don't have access, reach out t
 
 ## Overview
 
-Private locations allow you to **monitor internal-facing applications or any private URLs** that aren’t accessible from the public internet. They can also be used to:
+Private locations allow you to **monitor internal-facing applications or any private endpoints** that aren’t accessible from the public internet. They can also be used to:
 
 * **Create custom Synthetic locations** in areas that are mission-critical to your business.
 * **Verify application performance in your internal CI environment** before you release new features to production with [Synthetic CI/CD testing][1].
@@ -90,9 +90,9 @@ To pull test configurations and push test results, the private location worker n
 
 ### Create your private location
 
-Go in _Synthetic Monitoring_ -> _Settings_ -> _Private Locations_ and click **Add Private Location**:
+Go to _Synthetic Monitoring_ -> _Settings_ -> _Private Locations_ and click **Add Private Location**:
 
-{{< img src="synthetics/private_locations/add_pl.png" alt="create a private locations"  style="width:100%;">}}
+{{< img src="synthetics/private_locations/synthetics_pl_add.png" alt="create a private locations"  style="width:100%;">}}
 
 **Note**: Only **Admin** users can create private locations.
 
@@ -521,9 +521,9 @@ You can then start testing your first internal endpoint by launching a fast test
 
 ## Launch Synthetic tests from your private location
 
-If your private location reports correctly to Datadog you should also see an `OK` health status displayed on private locations list from the **Settings** page:
+If your private location reports correctly to Datadog you should also see a `REPORTING` health status displayed on private locations list from the **Settings** page:
 
-{{< img src="synthetics/private_locations/pl_health.png" alt="Private location health"  style="width:100%;">}}
+{{< img src="synthetics/private_locations/pl_monitoring_table_reporting.png" alt="Private location health"  style="width:100%;">}}
 
 You can then go to any of your API or Browser test creation form, and tick your **Private locations** of interest to have them run your Synthetic test on schedule:
 
@@ -531,101 +531,19 @@ You can then go to any of your API or Browser test creation form, and tick your 
 
 Your private locations can be used just like any other Datadog managed locations: assign [Synthetic tests][2] to private locations, visualize test results, get [Synthetic metrics][11], etc.
 
-## Dimension your private location
-
-### Types of test runs
-
-Private locations can run [API][12], [Multistep API][13], and [Browser tests][14]. A same private location can run several types of tests. However, for dimensioning reasons, it can prove helpful to split test assignments based on test types and for instance have some private locations run only API and Multistep API tests and others run only Browser tests, which are more resource intensive than other test types. 
-
-### Maximum number of test runs
-
-Resource requirements depend on the maximum number of test runs your private location might have to execute in parallel. When defining that number, make sure to take into account spikes that might happen when performing on demand testing (for example, when running tests as part of your [CI/CD pipelines][1]).
-
-The maximum number of test runs allows you to define the [`concurrency` parameter][15] of your private location (it defaults to `10`). This parameter allows you to adjust the number of test runs your private location workers can run concurrently.
-
-### Private location total hardware requirements
-
-Once you know the [type of tests](#types-of-test-runs) you want your private location to execute and the [maximum number of test runs](#maximum-number-of-test-runs) that needs to be executed in parallel, you can define the **total** hardware requirements for your private location. 
-
-* Base requirements: 
-  * CPU: 150mCores
-  * Memory: 150MiB
-
-* Additional requirements are based on the type of tests run by the private location:
-
-| Test type                                     | CPU/Memory/Disk recommendation    |
-| --------------------------------------------- | --------------------------------- |
-| [API tests][12] and [Multistep API tests][13] | 20mCores/5MiB/1MiB per test run   |
-| [Browser tests][14]                           | 150mCores/1GiB/10MiB per test run |
-
-**Example:** For a private location running only Browser tests, with a maximum number of concurrent test runs of `10`, the recommendation for a safe usage is 
-~ 1.5Core CPU `(150mCores + (150mCores*10 test runs))`, ~ 10GiB memory `(150MiB + (1GiB*10 test runs))`, and ~ 100MiB disk `(10MiB*10 test runs)`.
-
-**Note:** Resources requirements may vary based on the application being tested (size and number of assets to be loaded, etc.).
-
-**Note:** When running both API or Multistep API tests and Browser tests on a single private location, the recommendation is to perform computation using Browser tests resource requirements.
-
-### Assign resources to your private location
-
-Once you know about the [**total** requirements for your private location](#private-location-total-hardware-requirements), you can decide how you want these resources to be distributed:
-
-* You can assign all resources to a single worker. In this case:
-  * Set the [`concurrency` parameter][15] to `maximum number of test runs that can be executed in parallel on your private location`.
-  * Assign your [total private location resource requirements](#private-location-total-hardware-requirements) to your unique container.
-* You can distribute resources across several workers by running several containers for one private location with a single configuration file in order to spread the load. In this case:
-  * Set the [`concurrency` parameter][15] to `maximum number of test runs that can be executed on your private location / number of workers associated with your private location`.
-  * Assign `total private location resource requirements / number of workers` resources to each private location container.
-
-
-**Example:** For a private location running only Browser tests, with a maximum number of concurrent test runs of `10`, your private location requires ~ 1.5 core CPU, ~ 10GiB memory, and ~ 100MiB disk. If you want to distribute these resources across two workers, the [`concurrency` parameter][15] should be set to `5`, and each worker should be allocated ~ 750mCores CPU, ~ 5GiB memory, and ~ 50MiB disk.
-
-#### Queueing mechanism
-
-When there are several workers associated with a private location, each worker requests a number of tests to run that depends on its [`concurrency` parameter][15] and on the number of additional test runs that can be assigned to it.   
-
-**Example:** Ten tests are scheduled to run simultaneously on a private location that has two workers running. If worker 1 is running two tests, it can request three additional tests to run. If worker 2 is not running any tests, it can request the five following tests. The remaining two tests can be requested by which ever worker has finished running its test first (which ever worker has available slots).
-
 ## Scale your private location
 
 Because you can run several containers for one single private location with a single configuration file, you can **horizontally scale** your private locations by adding or removing workers to them. When doing so, make sure to set a `concurrency` parameter and allocate worker resources that are consistent with the types and the number of tests you want your private location to execute.
 
 You can also **vertically scale** your private locations by increasing the load your private location containers can handle. Similarly, you should use the `concurrency` parameter to adjust the maximum number of test your workers allowed to run and update the resources allocated to your workers.
 
-Read more about [dimensioning private locations](#dimension-your-private-location).
+Read more about [dimensioning private locations][18].
 
-## Monitor your private locations
+## Monitor your private location
 
-Although it's important to initially add resources that are consistent with the number and type of tests to execute from your private location, the easiest way to know if you should downscale or upscale your private location is to closely monitor it. 
+Although it's important to initially add resources that are consistent with the number and type of tests to execute from your private location, the easiest way to know if you should downscale or upscale your private location is to closely monitor it. With [private location monitoring][19], you now have insight into the performance and state of your private location with out of the box metrics and monitors. Find more about monitoring your private location [here][19].
 
-### Out of the box monitoring
 
-Private locations come with a set of out of the box [metrics][LINK] allowing you to keep track of your private location health at a high level. You can visualize these metrics in the side panel of each private location listed on your [Settings][LINK] page or graph these metrics in [dashboards][LINK], like any other Datadog metric.
-
-The table available on individual private location side panels lists all workers reporting as well as the version they're running. You can refer to that dashboard to get a sense of the number of containers that would need to pull the new version of the image.
-
-[ADD SCREENSHOT]
-
-Individual private location side panels also display warnings in case something is going wrong with your private location, for instance if it stopped reporting, if it's starting to become underprovisioned or if it's running an outdated image version.
-
-[ADD SCREENSHOT]
-
-#### Default monitors
-
-At your first private location creation, three monitors are created on your account:
-
-* `[Synthetic Private Locations] {{location_id.name}} stopped reporting`: This monitor triggers a `NO DATA` alert whenever the [`synthetics.pl.worker.running`][LINK TO METRICS] metric stops reporting data for one of your private locations. This indicates your private location containers might have been killed or stopped running.
-* `[Synthetic Private Locations] {{location_id.name}} is underprovisioned`: This monitor triggers an `ALERT` whenever the [`synthetics.pl.worker.remaining_slots`][LINK TO METRICS] metric goes below 1.5 on average for 30 minutes. This indicates that your private location is underprovisioned. You can then either [vertically or horizontally scale your private location][LINK] to ensure it gets enough resources to execute all the tests that are assigned to it.
-* `[Synthetic Private Locations] {{location_id.name}} uses an outdated image version`: This monitor triggers an `ALERT` whenever the [`synthetics.pl.worker.outdated`][LINK TO METRICS] metric starts reporting 1 for one of your private locations. This indicates that at least one of your private location containers is running an outdated version of the private location image. You can check what the latest version of the image is by looking at the [Google Container Registry][LINK] and upgrade workers to that version of the image by pulling the `datadog/synthetics-private-location-worker` image with the `latest` tag.
-
-By default, no handle is set in these monitors. If you want to be alerted in case one of your monitors starts failing, you should make sure to add a handle in your monitors' notification sections. [LINK TO MONITOR NOTIF OR NOTIF INTEGRATION]
-
-The monitors showing up on private location side panels are monitors that:
-* Either have a group that corresponds to the id of your private location,
-* Or are tagged with `location_id:<ID_OF_THE_PL>`.
-
-### Datadog Agent monitoring
-
-In addition to the out of the box private location metrics, we strongly recommend installing the [Datadog Agent][16] alongside your private location. The [Datadog Agent][16] allows to get in-depth visibility on your private locations by providing you with metrics about the health of the underlying containers (memory usage and limits, CPU, disk, etc.), which you can then use to graph and be alerted on low resources.
 
 ## Further Reading
 
@@ -647,3 +565,6 @@ In addition to the out of the box private location metrics, we strongly recommen
 [14]: /synthetics/browser_tests/?tab=requestoptions
 [15]: /synthetics/private_locations/configuration#advanced-configuration
 [16]: /agent/
+[17]: /synthetics/metrics/
+[18]: /synthetics/private_locations/dimensioning
+[19]: /synthetics/private_locations/private_location_monitoring
