@@ -6582,6 +6582,24 @@ components:
         `markdown`, `timeseries`, `toplist`, `heatmap`, `distribution`,
 
         `log_stream`. [More information on each graph visualization type.](https://docs.datadoghq.com/dashboards/widgets/)'
+      example:
+        definition:
+          requests:
+          - display_type: line
+            q: avg:system.load.1{*}
+            style:
+              line_type: solid
+              line_width: normal
+              palette: dog_classic
+          show_legend: true
+          type: timeseries
+          yaxis:
+            scale: linear
+        graph_size: m
+        split_by:
+          keys: []
+          tags: []
+        time: null
       oneOf:
       - $ref: '#/components/schemas/NotebookMarkdownCellAttributes'
       - $ref: '#/components/schemas/NotebookTimeseriesCellAttributes'
@@ -7714,11 +7732,21 @@ components:
         description:
           description: Description of the correction being made.
           type: string
+        duration:
+          description: Length of time (in seconds) for a specified `rrule` recurring
+            SLO correction.
+          example: 1600000000
+          format: int64
+          type: integer
         end:
           description: Ending time of the correction in epoch seconds.
           example: 1600000000
           format: int64
           type: integer
+        rrule:
+          description: Recurrence rules as defined in the iCalendar RFC 5545.
+          example: RRULE:FREQ=DAILY;INTERVAL=10;COUNT=5
+          type: string
         slo_id:
           description: ID of the SLO that this correction will be applied to.
           example: sloId
@@ -7736,7 +7764,6 @@ components:
       required:
       - slo_id
       - start
-      - end
       - category
       type: object
     SLOCorrectionListResponse:
@@ -7766,10 +7793,20 @@ components:
         description:
           description: Description of the correction being made.
           type: string
+        duration:
+          description: Length of time (in seconds) for a specified `rrule` recurring
+            SLO correction.
+          example: 1600000000
+          format: int64
+          type: integer
         end:
           description: Ending time of the correction in epoch seconds.
           format: int64
           type: integer
+        rrule:
+          description: Recurrence rules as defined in the iCalendar RFC 5545.
+          example: RRULE:FREQ=DAILY;INTERVAL=10;COUNT=5
+          type: string
         slo_id:
           description: ID of the SLO that this correction will be applied to.
           type: string
@@ -7813,11 +7850,21 @@ components:
         description:
           description: Description of the correction being made.
           type: string
+        duration:
+          description: Length of time (in seconds) for a specified `rrule` recurring
+            SLO correction.
+          example: 1600000000
+          format: int64
+          type: integer
         end:
           description: Ending time of the correction in epoch seconds.
           example: 1600000000
           format: int64
           type: integer
+        rrule:
+          description: Recurrence rules as defined in the iCalendar RFC 5545.
+          example: RRULE:FREQ=DAILY;INTERVAL=10;COUNT=5
+          type: string
         start:
           description: Starting time of the correction in epoch seconds.
           example: 1600000000
